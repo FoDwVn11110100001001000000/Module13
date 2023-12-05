@@ -1,15 +1,18 @@
+import os
+
+from dotenv import load_dotenv
+
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
-import configparser
 
-config = configparser.ConfigParser()
-config.read('config.ini')
 
-user = config.get('DATABASE', 'USER')
-password = config.get('DATABASE', 'PASSWORD')
-host = config.get('DATABASE', 'HOST')
-port = config.get('DATABASE', 'PORT')
-name = config.get('DATABASE', 'NAME')
+load_dotenv()
+
+user = os.environ.get('USER')
+password = os.environ.get('PASSWORD')
+host = os.environ.get('HOST')
+port = os.environ.get('PORT')
+name = os.environ.get('NAME')
 
 class Base(DeclarativeBase):
     pass

@@ -1,3 +1,6 @@
+import pickle
+import redis
+
 from typing import Optional
 
 from jose import JWTError, jwt
@@ -9,7 +12,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.db import get_db
 from app.repository import users as repository_users
+from app.conf.config import config
 
+def hash_for_user(email:str):
+    return f"user:{email}"
 
 class Auth:
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -71,10 +77,37 @@ class Auth:
         except JWTError as e:
             raise credentials_exception
 
-        user = await repository_users.get_user_by_email(email, db)
+        user_hash=hash_for_user(email)
+        user = self.cache.get(user_hash)
         if user is None:
-            raise credentials_exception
+            user = await repository_users.get_user_by_email(email, db)
+            if user is None:
+                raise credentials_exception
+            self.cache.set(user_hash, pickle.dumps(user))
+            self.cache.expire(user_hash, 900)
+        else:
+            user = pickle.loads(user)
+
         return user
+    
+    def create_email_token(self, data: dict):
+        to_encode = data.copy()
+        expire = datetime.utcnow() + timedelta(days=7)
+        to_encode.update({"iat": datetime.utcnow(), "exp": expire})
+        token = jwt.encode(to_encode, self.SECRET_KEY, algorithm=self.ALGORITHM)
+        return token
+
+    async def get_email_from_token(self, token: str):
+        try:
+            payload = jwt.decode(token, self.SECRET_KEY, algorithms=[self.ALGORITHM])
+            email = payload["sub"]
+            return email
+        except JWTError as e:
+            print(e)
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                                detail="Invalid token for email verification")
+
+
 
 
 auth_service = Auth()

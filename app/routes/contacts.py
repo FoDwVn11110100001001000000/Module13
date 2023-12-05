@@ -1,16 +1,35 @@
-from fastapi import Depends,HTTPException,status,APIRouter
-from app.database.db import get_db
+from datetime import datetime, timedelta
+from typing import List
+
+from sqlalchemy.future import select
+from sqlalchemy import text, and_, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import text,and_,func,or_
+from fastapi import Depends, HTTPException, status, APIRouter
+from fastapi_limiter.depends import RateLimiter
+
+from app.database.db import get_db
 from app.database.model import Contact,User
 from app.schemas import ContactModel,ContactResponse
-from typing import List
-from datetime import datetime, timedelta
 from app.services.auth import auth_service
-from sqlalchemy.future import select
 
 
 router = APIRouter(prefix='/main', tags=["contacts"])
+
+async def get_contacts(skip: int, limit: int, user_id: int, db: AsyncSession):
+    result = await db.execute(
+        select(Contact).filter(Contact.user_id == user_id).offset(skip).limit(limit)
+    )
+    contacts = result.scalars().all()
+    return contacts
+
+
+@router.get("/", response_model=List[ContactResponse], description='No more than 10 requests per minute',
+            dependencies=[Depends(RateLimiter(times=10, seconds=60))])
+async def read_notes(skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_db),
+                     current_user: User = Depends(auth_service.get_current_user)):
+    contacts = await get_contacts(skip, limit, current_user, db)
+    return contacts
+
 
 @router.get("/api/healthchecker")
 async def healthchecker(db: AsyncSession = Depends(get_db)):
@@ -90,7 +109,7 @@ async def update(contact_id : int,body:ContactModel,db: AsyncSession = Depends(g
         await db.commit()
         await db.refresh(contact)
         
-    contact_response = ContactResponse.from_orm(contact)
+    contact_response = ContactResponse.model_validate(contact)
     return contact_response
 
 

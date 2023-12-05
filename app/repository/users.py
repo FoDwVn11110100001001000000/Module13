@@ -11,6 +11,7 @@ async def get_user_by_email(email: str, db: AsyncSession) -> User:
     user = result.scalar()
     return user
 
+
 async def user_to_response_schema(user: User) -> UserResponseSchema:
     return UserResponseSchema(
         id=user.id,
@@ -18,6 +19,7 @@ async def user_to_response_schema(user: User) -> UserResponseSchema:
         email=user.email,
         avatar=user.avatar
     )
+
 
 async def create_user(body: UserSchema, db: AsyncSession) -> User:
     avatar = None
@@ -37,3 +39,16 @@ async def create_user(body: UserSchema, db: AsyncSession) -> User:
 async def update_token(user: User, token: str | None, db: AsyncSession) -> None:
     user.refresh_token = token
     await db.commit()
+
+
+async def confirmed_email(email: str, db: AsyncSession) -> None:
+    user = await get_user_by_email(email, db)
+    user.confirmed = True
+    await db.commit()
+
+
+async def update_avatar(email, url: str, db: AsyncSession) -> User:
+    user = await get_user_by_email(email, db)
+    user.avatar = url
+    await db.commit()
+    return user

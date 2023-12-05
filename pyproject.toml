@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "module11"
+name = "module13"
 version = "0.1.0"
 description = ""
 authors = ["Dmytro <777fesenko.d@gmail.com>"]
@@ -7,19 +7,26 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-fastapi = "^0.103.2"
-pydantic = {extras = ["email"], version = "^2.4.2"}
-uvicorn = {extras = ["standard"], version = "^0.23.2"}
-sqlalchemy = "^2.0.21"
+fastapi = "^0.104.1"
+pydantic = "^2.5.2"
+uvicorn = "^0.24.0.post1"
+sqlalchemy = "^2.0.23"
 psycopg2-binary = "^2.9.9"
-alembic = "^1.12.0"
-python-jose = {extras = ["cryptography"], version = "^3.3.0"}
+python-jose = "^3.3.0"
 passlib = "^1.7.4"
 libgravatar = "^1.0.4"
 python-multipart = "^0.0.6"
-asyncpg = "^0.28.0"
-bcrypt = "^4.0.1"
+asyncpg = "^0.29.0"
+bcrypt = "^4.1.1"
+alembic = "^1.13.0"
+python-dotenv = "^1.0.0"
+cloudinary = "^1.37.0"
+redis = "^5.0.1"
+fastapi-mail = "^1.4.1"
 
+
+[tool.poetry.group.dev.dependencies]
+sphinx = "^7.2.6"
 
 [build-system]
 requires = ["poetry-core"]
